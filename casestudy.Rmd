@@ -1,0 +1,421 @@
+---
+title: "Divvy_Exercise_Full_Year_Analysis"
+author: "Adeboye"
+date: "2022-09-01"
+output: html_document
+---
+
+
+## Case Study: How Does a Bike-Share Navigate Speedy Success?
+
+This analysis is based on the Divvy case study "'Sophisticated, Clear, and Polished’: Divvy and Data Visualization" written by Kevin Hartman (found here: https://artscience.blog/home/divvy-dataviz-case-study). The purpose of this script is to consolidate downloaded Divvy data into a single dataframe and then conduct simple analysis to help answer the key question: “In what ways do members and casual riders use Divvy bikes differently?”
+
+# Scenario
+You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director
+of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore,
+your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights,
+your team will design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives
+must approve your recommendations, so they must be backed up with compelling data insights and professional data
+visualizations.
+
+# A clear statement of the business task
+The financial analysts have concluded that annual membership is much more profitable than single-ride and full-day passes from their analysis. So to make people opt for the yearly membership, our marketing campaign should urge the casual riders to convert to annual riders. Our solution is that we should understand why casual riders would convert to a yearly membership? Based on the insights from the above question, we can achieve solutions to incrrease the conversion rate of casual riders to annual riders.
+
+# Stakeholders
+Lily Moreno and the Executives of the Cyclist Company
+
+# A description of all data sources used
+Data was uploaded to R studio by me. Data was divided from August last year (2021) to July this year(2022) making 12 months. There are no bias or credibility issues because the data was collected directly from the company's customers. It satisfies ROCCC (Reliable, Original, Comprehensive, Cited and Current). The data was collected by Motivate International Inc. under the following license
+https://www.divvybikes.com/data-license-agreement Also the dataset does not contain any personal information about its customers (or riders) to violate the privacy. Also by creating new features from existing ones like rideable_type, started_at, and ended_at(which are date-timestamp variables), we can deduce relationship between annual members and casual riders. The relationship analyzed will be useful to answer the question, that is, convert casual riders to annual members. The data had a couple of errors such as duplicates and some N/A values which we would clean.
+
+# Documentation of any cleaning or manipulation of data
+I will be using R studio for the cleaning and manipulation of this data set.
+
+
+installation and loading of all the required packages
+```{r}
+install.packages("tidyverse")
+install.packages("lubridate")
+install.packages("ggplot2")
+install.packages("janitor")
+install.packages("scales")
+library("tidyverse")
+library("lubridate")
+library("ggplot2")
+library("janitor")
+library("scales")
+```
+setting current directory to where csv files are located
+```{r}
+setwd("C:/Users/dell/Downloads/Case_study/csv")
+```
+
+loading all the individual CSVs
+```{r}
+September_2021 <- read_csv("202109-divvy-tripdata.csv")
+October_2021 <- read_csv("202110-divvy-tripdata.csv")
+November_2021 <- read_csv("202111-divvy-tripdata.csv")
+December_2021 <- read_csv("202112-divvy-tripdata.csv")
+January_2022 <- read_csv("202201-divvy-tripdata.csv")
+Febuary_2022 <- read_csv("202202-divvy-tripdata.csv")
+March_2022 <- read_csv("202203-divvy-tripdata.csv")
+April_2022 <- read_csv("202204-divvy-tripdata.csv")
+May_2022 <- read_csv("202205-divvy-tripdata.csv")
+June_2022 <- read_csv("202206-divvy-tripdata.csv")
+July_2022 <- read_csv("202207-divvy-tripdata.csv")
+```
+
+Loading column names of all csv files to check if they are consistent with each other
+```{r}
+colnames(August_2021)
+colnames(September_2021)
+colnames(October_2021)
+colnames(November_2021)
+colnames(December_2021)
+colnames(January_2022)
+colnames(Febuary_2022)
+colnames(March_2022)
+colnames(April_2022)
+colnames(May_2022)
+colnames(June_2022)
+colnames(July_2022)
+```
+
+Inspecting the dataframes and looking for incongruencies
+```{r}
+str(August_2021)
+str(September_2021)
+str(October_2021)
+str(November_2021)
+str(December_2021)
+str(January_2022)
+str(Febuary_2022)
+str(March_2022)
+str(April_2022)
+str(May_2022)
+str(June_2022)
+str(July_2022)
+```
+
+Stacking individual data frames into one big data frame
+```{r}
+full_year <- bind_rows(August_2021, September_2021, October_2021, November_2021, December_2021, January_2022, Febuary_2022, March_2022, April_2022, May_2022, June_2022, July_2022)
+```
+
+checking column names of the full_year data frame
+```{r}
+colnames(full_year)
+```
+
+checking string types of the columns in full_year data frame
+```{r}
+str(full_year)
+```
+
+Removing any empty rows or columns present
+```{r}
+new_full_yearf <- remove_empty(full_year, which=c("rows", "cols"))
+count(filter(new_full_year, start_station_name==''),start_station_name, member_casual,sort=TRUE)
+```
+
+editing the data frame
+```{r}
+nrow(full_year)
+dim(full_year)
+head(full_year)
+summary(full_year)
+full_year %>% 
+  count(rideable_type)
+```
+Removing NA values from the data frame
+```{r}
+new_full_year <- na.omit(full_year)
+```
+
+Removing duplicates in the data frame
+```{r}
+new_full_year_no_duplicate <- new_full_year[!duplicated(new_full_year$ride_id), ]
+```
+
+## ANALYZE
+Organizing the clean data into a new data frame 
+```{r}
+cleaned_analysis <- new_full_year_no_duplicate
+```
+
+Adding riding time as a variable from existing variables.
+```{r}
+cleaned_analysis <- cleaned_analysis %>% 
+  mutate(riding_time = as.numeric(ended_at-started_at)/60)
+```
+
+Adding year and month as variables from existing variables
+```{r}
+cleaned_analysis <- cleaned_analysis %>% 
+  mutate(year_month=paste(strftime(cleaned_analysis$started_at, "%Y"), "-",
+                          strftime(cleaned_analysis$started_at, "%m"), "-",
+                          strftime(cleaned_analysis$started_at, "%b")))
+```
+
+Adding weekday as variables from existing variables
+```{r}
+cleaned_analysis <- cleaned_analysis %>% 
+  mutate(weekday=strftime(cleaned_analysis$ended_at, "%a"))
+```
+
+Adding start_hour to our variables
+```{r}
+cleaned_analysis <- cleaned_analysis %>% 
+  mutate(start_hour=strftime(cleaned_analysis$ended_at, format = "%H",tz = "UTC"))
+```
+
+compare the number of members and casual riders
+```{r}
+data_frame <- cleaned_analysis
+data_frame %>% 
+  group_by(member_casual) %>% 
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(df))*100)
+```
+
+Create a ggplot for the above
+```{r}
+ggplot(data_frame, aes(member_casual, fill=member_casual))+
+  geom_bar()+
+  labs(title="Chart-1 Member vs Casual distribution")+
+  scale_y_continuous(labels=comma)
+```
+
+percentage of annual and casual riders ride every month
+```{r}
+data_frame %>% 
+  group_by(year_month) %>%
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(data_frame))*100,
+            members_count=sum(member_casual=="member"),
+            members_percent=(sum(member_casual=="member")/length(ride_id))*100,
+            casual_count=sum(member_casual=="casual"),
+            casual_percent=(sum(member_casual=="casual")/length(ride_id))*100) %>%
+  arrange(year_month)
+```
+
+August had a more number of riders than any other month. However, the percentage of annual members every month is more than the casual riders', which is a good thing. Our goal here would be to maximize the percent of members every month.
+Plotting the table
+```{r}
+ggplot(data_frame, aes(year_month, fill=member_casual))+
+  geom_bar()+
+  coord_flip()+
+  scale_y_continuous(labels=comma)
+```
+
+Checking rider's ride in each hour of the day and the variation in days of the week
+```{r}
+start_hour_data_frame <- data_frame %>% 
+  group_by(start_hour) %>%
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(data_frame))*100,
+            members_count=sum(member_casual=="member"),
+            members_percent=(sum(member_casual=="member")/length(ride_id))*100,
+            casual_count=sum(member_casual=="casual"),
+            casual_percent=(sum(member_casual=="casual")/length(ride_id))*100) %>% 
+  arrange(start_hour)
+start_hour_data_frame
+```
+
+Plotting the above table
+```{r}
+ggplot(data_frame, aes(start_hour, fill=member_casual))+
+  geom_bar()+
+  facet_wrap(~weekday)+  
+  scale_y_continuous(labels=comma)+
+  theme(axis.text.x = element_text(size=6, angle=45))
+```
+
+dividing into morning, afternoon and evening
+```{r}
+data_frame <- mutate(data_frame, hour_of_the_day=ifelse(data_frame$start_hour<12, "Morning",
+                                        ifelse(data_frame$start_hour>=12 & data_frame$start_hour<19, "Afternoon", "Evening")))
+```
+
+```{r}
+hour_type_data_frame <- data_frame %>% 
+  group_by(hour_of_the_day) %>%
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(data_frame))*100,
+            members_count=sum(member_casual=="member"),
+            members_percent=(sum(member_casual=="member")/length(ride_id))*100,
+            casual_count=sum(member_casual=="casual"),
+            casual_percent=(sum(member_casual=="casual")/length(ride_id))*100)
+hour_type_data_frame
+```
+Afternoon has more casual and annual riders more than both morning and evening while morning has more annual riders than evening and evening has more casual riders than morning.
+
+
+Plotting the above table
+```{r}
+ggplot(data_frame, aes(hour_of_the_day, fill=member_casual))+
+  geom_bar()+
+  #facet_wrap(~hour_of_the_day, scales = "free")+
+  scale_y_continuous(labels=comma)+
+  coord_flip()
+```
+
+Dataframe on how riders vary in each day of the week
+```{r}
+data_frame %>% 
+  group_by(weekday) %>%
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(data_frame))*100,
+            members_count=sum(member_casual=="member"),
+            members_percent=(sum(member_casual=="member")/length(ride_id))*100,
+            casual_count=sum(member_casual=="casual"),
+            casual_percent=(sum(member_casual=="casual")/length(ride_id))*100)
+```
+Saturdays and Sundays had more casual riders than annual members.
+
+plotting the above table
+```{r}
+ggplot(data_frame, aes(weekday, fill=member_casual))+
+  geom_bar()+
+  scale_y_continuous(labels=comma)
+```
+
+Checking the types of bike being used and how frequently they are used
+```{r}
+data_frame %>% 
+  group_by(rideable_type) %>%
+  summarize(count=length(ride_id),
+            percentage_of_total=(length(ride_id)/nrow(data_frame))*100,
+            members_count=sum(member_casual=="member"),
+            members_percent=(sum(member_casual=="member")/length(ride_id))*100,
+            casual_count=sum(member_casual=="casual"),
+            casual_percent=(sum(member_casual=="casual")/length(ride_id))*100)
+```
+
+plotting the graph for the above
+```{r}
+ggplot(data_frame, aes(rideable_type, fill=member_casual))+
+  geom_bar()+
+  scale_y_continuous(labels=comma)+
+  facet_wrap(~weekday)+
+  theme(axis.text.x = element_text(angle=25))
+```
+According to the data, docked rides were used by casual members while classic bikes were the most used generally both by annual members and casual members. also by checking the number of docked rides used it can be determined that there aren't much docked rides that the company offers.
+
+create a riding time feature
+```{r}
+data_frame <- data_frame %>% 
+  mutate(riding_time = as.numeric(ended_at-started_at)/60)
+data_frame
+
+summary(data_frame$riding_time)
+```
+
+there are outliers. The minimum riding time is negative, which is unusual as time can't be negative. The maximum also seems too large
+Printing the values in each quantiles with 5% difference
+```{r}
+quantiles <- quantile(data_frame$riding_time, seq(0,1,by=0.05))
+quantiles
+```
+
+Considering only the values in the 5-95% interval
+```{r}
+new_data_frame <- data_frame %>% 
+  filter(riding_time > as.numeric(quantiles['5%'])) %>% 
+  filter(riding_time < as.numeric(quantiles['95%']))
+final_data_frame <- new_data_frame
+```
+
+Now let's compare the riding_time with all the other features used before
+Let's start by checking the riding time of both members and casual riders
+```{r}
+final_data_frame %>% 
+  group_by(member_casual) %>% 
+  summarize(mean=mean(riding_time),
+            first_quarter=quantile(riding_time, 0.25),
+            median=median(riding_time),
+            third_quarter=quantile(riding_time, 0.75),
+            IQR = third_quarter-first_quarter)
+```
+
+plotting the above table's graph to see patterns
+```{r}
+ggplot(final_data_frame, aes(x=member_casual, y=riding_time, fill=member_casual))+
+  geom_boxplot()
+```
+
+Comparing riding times of each day of the week for both types of riders
+using box plots cos it's continous
+```{r}
+final_data_frame %>% 
+  group_by(weekday) %>% 
+  summarize(mean=mean(riding_time),
+            first_quarter=quantile(riding_time, 0.25),
+            median=median(riding_time),
+            third_quarter=quantile(riding_time, 0.75),
+            IQR = third_quarter-first_quarter)
+```
+
+plotting the graph for the above table
+```{r}
+ggplot(final_data_frame, aes(x=weekday, y=riding_time, fill=member_casual))+
+  geom_boxplot()
+```
+
+let's now compare riding time for months
+```{r}
+final_data_frame %>% 
+  group_by(year_month) %>% 
+  summarize(mean=mean(riding_time),
+            first_quarter=quantile(riding_time, 0.25),
+            median=median(riding_time),
+            third_quarter=quantile(riding_time, 0.75),
+            IQR = third_quarter-first_quarter)
+```
+
+graph for the above
+```{r}
+ggplot(final_data_frame, aes(x=year_month, y=riding_time, fill=member_casual))+
+  geom_boxplot()+
+  coord_flip()
+```
+
+
+# Observations
+    Below I explain how casual riders and annual member riders differ and observations observed about both even relating with time and season affects the analysis.
+
+According to the analysis above, we can conclude that the annual members take a bulk of the percentage of people using the diivy company bikes. Infact they account for almost 60 percent of riders per year.
+
+We can also see from the analysis above that casual riders tend to increase from the months of June, July, August and September and tend to reduce from the months of October to Febuary with a peak in decline in January.
+
+With the above point we can surmise that casual riders tend to increase in the summer periods which coincides with when school gives breaks and also tend to increase from winter periods fall or winter periods when school resume
+
+On an average in 12 months, annual members tend to start their journey from early morning 6 am and increase throughout the day to hit the peak at 5 pm. This trend might be because most of the members use their bikes to commute to their work and commute back from work.
+
+While for casual riders, they tend to ride mostly in the afternoons and evenings as we can see a deep increase in their numbers. We can extrapolate that casual riders mostly use the bikes for recreational activities 
+
+If we scrutinize the start hour per day of the week, we find that the annual members are not as active on the weekends as they are on the weekdays. In comparison, casual riders are more active on the weekends. This pattern further proves that members usually use their bikes to commute to work. 
+
+8) When later the hours of the day were classified into morning, afternoon, and evening, the visualization depicted that more members travel in the mornings and afternoons. In comparison, casual riders travel more in the afternoons and evenings. 
+
+When the riding time of casuals and members is compared, causal riders have higher riding time than members. This trend again proves that members use bikes to work and park, reducing their riding time. 
+
+Another proof that members have a fixed route and use bikes for the same reason throughout the weekdays is when we plot the riding time against each day. 
+
+Also, as the number of riders was less in the peak winter times, the same reflects on the riding time. There were fewer riders in these months, so was the riding time.
+
+**Recommendations in order to increase annual riders**
+
+1) Create more offers for annual members and not for casual riders. This will force more casual riders to join annual members because they want to partake of such offers
+
+There should be price increment for the casual riders, this will push them to join annual riders in order to reduce cost
+
+More bike centers should be located around schools and campuses. As we can see from the analysis, There seems to be an increase during the summer which is when schools take a long break thus proving that students and teachers tend to join the casual riders during the break. Adding bike centers to schools and campuses can improve the number of annual riders all year round.
+
+There should be offers and promos for school children in order to boost the number of annual members.
+
+There should also be special offers for anyone who registers for the annual membership from November to February. 
+
+Increase the surge for bikes for casual riders in the evenings.
+
+Make some bikes only available to annual members so that casual members are forced to join annual members in order to get access to all bikes
