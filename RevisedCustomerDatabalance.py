@@ -22,7 +22,7 @@ def download_csv_from_link(download_link):
 
 # Function to dynamically change the seconds part of the link until a successful download is made
 def get_csv_download_link():
-    base_url = "http://10.10.40.21/Customer_data_balance/Customer_data_balance_{}_{}.zip"
+    base_url = "http://**.**.***/Customer_data_balance/Customer_data_balance_{}_{}.zip"
     current_date = datetime.now().strftime('%Y%m%d')
     seconds_part = "060001"
     for i in range(5):
@@ -46,7 +46,6 @@ if zip_file_path:
     # Read the CSV file using Pandas
     df = pd.read_csv(f'temp_folder/{csv_filename}', low_memory=False)
 
-    # Perform analysis on the DataFrame (your existing code)
     df['VALID_TO'] = pd.to_datetime(df['VALID_TO'], dayfirst=True, errors='coerce')
     df['VALID_TO'] = df['VALID_TO'].dt.date
     present_date = datetime.now().date()
@@ -71,7 +70,7 @@ if zip_file_path:
     globals()[variable_name] = pivot_table
 
     # Save the analyzed DataFrame to a CSV file
-    csv_file_path = f'D:/Users/ADEBOYE/Documents/Python CSV/Customer DataBalance/{csv_filename}'
+    csv_file_path = f'D:/Users/System/Documents/Python CSV/Customer DataBalance/{csv_filename}'
     pivot_table.to_csv(csv_file_path, index=False)
     print(f"CSV file saved at: {csv_file_path}")
 
